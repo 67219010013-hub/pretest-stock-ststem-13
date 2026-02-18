@@ -59,9 +59,60 @@ try {
 
     // 4. Seed New Data (Monitors/Peripherals)
     echo "Seeding new categories...\n";
-    $pdo->exec("INSERT IGNORE INTO categories (name) VALUES ('Monitor'), ('Peripherals')");
+    $pdo->exec("INSERT IGNORE INTO categories (name) VALUES ('Monitor'), ('Peripherals'), ('CPU'), ('GPU'), ('RAM'), ('Motherboard'), ('Storage'), ('PSU'), ('Case'), ('Cooling')");
 
     echo "Seeding new products...\n";
+    echo "Seeding base products (CPU, GPU, etc.)...\n";
+    // Helper to get ID
+    function getCatId($pdo, $name)
+    {
+        $stmt = $pdo->prepare("SELECT id FROM categories WHERE name = ?");
+        $stmt->execute([$name]);
+        return $stmt->fetchColumn();
+    }
+
+    $cats = ['CPU', 'GPU', 'RAM', 'Motherboard', 'Storage', 'PSU', 'Case', 'Cooling'];
+    $catIds = [];
+    foreach ($cats as $c)
+        $catIds[$c] = getCatId($pdo, $c);
+
+    if ($catIds['CPU']) {
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['CPU'], 'Core i9-14900K', 'Intel', '14900K', 589.99, 50, 5, 'https://placehold.co/600x400/007bff/FFF?text=Core+i9-14900K']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['CPU'], 'Ryzen 9 7950X3D', 'AMD', '7950X3D', 649.99, 40, 5, 'https://placehold.co/600x400/ff9900/000?text=Ryzen+9+7950X3D']);
+    }
+    if ($catIds['GPU']) {
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['GPU'], 'GeForce RTX 4090', 'NVIDIA', 'Founders Edition', 1599.99, 10, 2, 'https://placehold.co/600x400/76b900/FFF?text=RTX+4090']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['GPU'], 'Radeon RX 7900 XTX', 'Sapphire', 'Nitro+', 999.99, 20, 3, 'https://placehold.co/600x400/ff0000/FFF?text=RX+7900+XTX']);
+    }
+    if ($catIds['RAM']) {
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['RAM'], 'Dominator Platinum RGB 32GB', 'Corsair', 'DDR5-6000', 169.99, 100, 10, 'https://placehold.co/600x400/333/FFF?text=Corsair+Dominator']);
+    }
+    if ($catIds['Motherboard']) {
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['Motherboard'], 'ROG Maximus Z790 Hero', 'ASUS', 'Z790', 629.99, 15, 3, 'https://placehold.co/600x400/000/FFF?text=ROG+Maximus+Z790']);
+    }
+    if ($catIds['Storage']) {
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['Storage'], '990 PRO 2TB', 'Samsung', 'NVMe', 179.99, 80, 10, 'https://placehold.co/600x400/000/FFF?text=Samsung+990+PRO']);
+    }
+    if ($catIds['PSU']) {
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['PSU'], 'HX1000i', 'Corsair', '1000W Platinum', 239.99, 30, 5, 'https://placehold.co/600x400/333/FFF?text=Corsair+HX1000i']);
+    }
+    if ($catIds['Case']) {
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['Case'], 'O11 Dynamic Evo', 'Lian Li', 'Mid-Tower', 159.99, 25, 5, 'https://placehold.co/600x400/ccc/000?text=Lian+Li+O11']);
+    }
+    if ($catIds['Cooling']) {
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['Cooling'], 'Kraken Elite 360', 'NZXT', 'AIO Liquid', 279.99, 35, 5, 'https://placehold.co/600x400/6f42c1/FFF?text=NZXT+Kraken']);
+    }
+
     // Get Category IDs
     $stmt = $pdo->prepare("SELECT id FROM categories WHERE name = ?");
     $stmt->execute(['Monitor']);
