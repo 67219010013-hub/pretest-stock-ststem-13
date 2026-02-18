@@ -102,7 +102,8 @@ if (!isset($_SESSION['user_id'])) {
             <div class="store-controls">
                 <div class="search-bar-container">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="search-input" class="search-input" placeholder="Search for components (e.g. 'RTX', 'Intel')..." oninput="filterProducts()">
+                    <input type="text" id="search-input" class="search-input"
+                        placeholder="Search for components (e.g. 'RTX', 'Intel')..." oninput="filterProducts()">
                 </div>
                 <div class="filter-tabs" id="category-filters">
                     <button class="filter-tab active" onclick="setFilter('all')">All</button>
@@ -385,11 +386,11 @@ if (!isset($_SESSION['user_id'])) {
                     fetchAPI('get_products'),
                     fetchAPI('get_categories')
                 ]);
-                
+
                 // Render Filters
                 const filterContainer = document.getElementById('category-filters');
                 if (filterContainer) {
-                    const extraFilters = categories.map(c => 
+                    const extraFilters = categories.map(c =>
                         `<button class="filter-tab" onclick="setFilter(${c.id}, this)">${c.name}</button>`
                     ).join('');
                     filterContainer.innerHTML += extraFilters;
@@ -398,14 +399,14 @@ if (!isset($_SESSION['user_id'])) {
                 // Global for filtering
                 window.allProducts = products;
                 window.activeCategory = 'all';
-                
+
                 filterProducts();
             }
         }
 
         function setFilter(categoryId, btn = null) {
             window.activeCategory = categoryId;
-            
+
             // Update UI
             document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
             if (btn) {
@@ -420,14 +421,14 @@ if (!isset($_SESSION['user_id'])) {
         function filterProducts() {
             const searchText = document.getElementById('search-input').value.toLowerCase();
             const filtered = window.allProducts.filter(p => {
-                const matchesSearch = p.name.toLowerCase().includes(searchText) || 
-                                      p.brand.toLowerCase().includes(searchText) || 
-                                      p.model.toLowerCase().includes(searchText);
+                const matchesSearch = p.name.toLowerCase().includes(searchText) ||
+                    p.brand.toLowerCase().includes(searchText) ||
+                    p.model.toLowerCase().includes(searchText);
                 const matchesCategory = window.activeCategory === 'all' || p.category_id == window.activeCategory;
-                
+
                 return matchesSearch && matchesCategory;
             });
-            
+
             renderStorefront(filtered);
         }
 
