@@ -80,25 +80,37 @@ try {
         $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
             ->execute([$catIds['CPU'], 'Core i9-14900K', 'Intel', '14900K', 589.99, 50, 5, 'https://placehold.co/600x400/007bff/FFF?text=Core+i9-14900K']);
         $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['CPU'], 'Core i5-13600K', 'Intel', '13600K', 299.99, 100, 10, 'https://placehold.co/600x400/007bff/FFF?text=Core+i5-13600K']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
             ->execute([$catIds['CPU'], 'Ryzen 9 7950X3D', 'AMD', '7950X3D', 649.99, 40, 5, 'https://placehold.co/600x400/ff9900/000?text=Ryzen+9+7950X3D']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['CPU'], 'Ryzen 5 7600X', 'AMD', '7600X', 229.99, 80, 10, 'https://placehold.co/600x400/ff9900/000?text=Ryzen+5+7600X']);
     }
     if ($catIds['GPU']) {
         $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
             ->execute([$catIds['GPU'], 'GeForce RTX 4090', 'NVIDIA', 'Founders Edition', 1599.99, 10, 2, 'https://placehold.co/600x400/76b900/FFF?text=RTX+4090']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['GPU'], 'GeForce RTX 4060 Ti', 'MSI', 'Ventus 2X', 399.99, 50, 5, 'https://placehold.co/600x400/76b900/FFF?text=RTX+4060+Ti']);
         $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
             ->execute([$catIds['GPU'], 'Radeon RX 7900 XTX', 'Sapphire', 'Nitro+', 999.99, 20, 3, 'https://placehold.co/600x400/ff0000/FFF?text=RX+7900+XTX']);
     }
     if ($catIds['RAM']) {
         $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
             ->execute([$catIds['RAM'], 'Dominator Platinum RGB 32GB', 'Corsair', 'DDR5-6000', 169.99, 100, 10, 'https://placehold.co/600x400/333/FFF?text=Corsair+Dominator']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['RAM'], 'Vengeance 16GB', 'Corsair', 'DDR5-5200', 89.99, 150, 20, 'https://placehold.co/600x400/333/FFF?text=Corsair+Vengeance']);
     }
     if ($catIds['Motherboard']) {
         $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
             ->execute([$catIds['Motherboard'], 'ROG Maximus Z790 Hero', 'ASUS', 'Z790', 629.99, 15, 3, 'https://placehold.co/600x400/000/FFF?text=ROG+Maximus+Z790']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['Motherboard'], 'B650 AORUS ELITE', 'Gigabyte', 'B650', 199.99, 40, 5, 'https://placehold.co/600x400/ff6600/FFF?text=B650+Aorus']);
     }
     if ($catIds['Storage']) {
         $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
             ->execute([$catIds['Storage'], '990 PRO 2TB', 'Samsung', 'NVMe', 179.99, 80, 10, 'https://placehold.co/600x400/000/FFF?text=Samsung+990+PRO']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$catIds['Storage'], 'WD Black SN850X 1TB', 'Western Digital', 'NVMe', 99.99, 100, 10, 'https://placehold.co/600x400/000/FFF?text=WD+Black+SN850X']);
     }
     if ($catIds['PSU']) {
         $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
