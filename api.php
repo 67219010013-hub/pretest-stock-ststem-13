@@ -39,6 +39,7 @@ try {
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['username'] = $user['username'];
                     $_SESSION['role'] = $user['role'];
+                    $_SESSION['profile_image'] = $user['profile_image'];
                     echo json_encode(['success' => true, 'role' => $user['role']]);
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Invalid credentials']);
@@ -51,6 +52,10 @@ try {
                 $data = json_decode(file_get_contents('php://input'), true);
                 $username = $data['username'];
                 $password = $data['password'];
+                $fullName = $data['full_name'] ?? '';
+                $address = $data['address'] ?? '';
+                $phone = $data['phone'] ?? '';
+                $image = $data['profile_image'] ?? '';
 
                 // Check if exists
                 $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
@@ -61,12 +66,73 @@ try {
                 }
 
                 $hash = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'customer')");
+                $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, full_name, address, phone, profile_image, role) VALUES (?, ?, ?, ?, ?, ?, 'customer')");
 
-                if ($stmt->execute([$username, $hash])) {
+                if ($stmt->execute([$username, $hash, $fullName, $address, $phone, $image])) {
                     echo json_encode(['success' => true]);
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Registration failed']);
+                }
+            }
+            break;
+
+        case 'get_profile':
+            requireAuth();
+            $stmt = $pdo->prepare("SELECT id, username, full_name, address, phone, profile_image, role, created_at FROM users WHERE id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            $user = $stmt->fetch();
+
+            // Get Order History
+            $stmtOrders = $pdo->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");
+            $stmtOrders->execute([$_SESSION['user_id']]);
+            $orders = $stmtOrders->fetchAll();
+
+            // Get Order Items for each order (simple loop since scale is small)
+            foreach ($orders as &$order) {
+                $stmtItems = $pdo->prepare("SELECT oi.*, p.name as product_name, p.image_url FROM order_items oi LEFT JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?");
+                $stmtItems->execute([$order['id']]);
+                $order['items'] = $stmtItems->fetchAll();
+            }
+
+            echo json_encode(['user' => $user, 'orders' => $orders]);
+            break;
+
+        case 'update_profile':
+            requireAuth();
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $sql = "UPDATE users SET full_name=?, address=?, phone=?, profile_image=? WHERE id=?";
+                $stmt = $pdo->prepare($sql);
+                if ($stmt->execute([$data['full_name'], $data['address'], $data['phone'], $data['profile_image'], $_SESSION['user_id']])) {
+                    echo json_encode(['success' => true]);
+                } else {
+                    echo json_encode(['success' => false, 'error' => 'Update failed']);
+                }
+            }
+            break;
+
+        case 'upload_image':
+            // requireAuth(); // Allow public upload for registration
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
+                $file = $_FILES['file'];
+                $uploadDir = 'uploads/';
+                if (!is_dir($uploadDir))
+                    mkdir($uploadDir, 0777, true);
+
+                $fileName = uniqid() . '_' . basename($file['name']);
+                $targetPath = $uploadDir . $fileName;
+
+                // Simple validation
+                $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                    echo json_encode(['success' => false, 'error' => 'Invalid file type']);
+                    exit;
+                }
+
+                if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                    echo json_encode(['success' => true, 'url' => $targetPath]);
+                } else {
+                    echo json_encode(['success' => false, 'error' => 'Upload failed']);
                 }
             }
             break;
@@ -78,7 +144,17 @@ try {
 
         case 'check_auth':
             if (isset($_SESSION['user_id'])) {
-                echo json_encode(['authenticated' => true, 'username' => $_SESSION['username'], 'role' => $_SESSION['role']]);
+                // Refresh session user data if needed? For now just return session
+                // Ideally we might want to fetch latest image/role
+                $stmt = $pdo->prepare("SELECT username, role, profile_image FROM users WHERE id = ?");
+                $stmt->execute([$_SESSION['user_id']]);
+                $u = $stmt->fetch();
+                echo json_encode([
+                    'authenticated' => true,
+                    'username' => $u['username'],
+                    'role' => $u['role'],
+                    'profile_image' => $u['profile_image']
+                ]);
             } else {
                 echo json_encode(['authenticated' => false]);
             }
