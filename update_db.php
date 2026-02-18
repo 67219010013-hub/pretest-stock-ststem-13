@@ -71,17 +71,17 @@ try {
     $perId = $stmt->fetchColumn();
 
     if ($monId) {
-        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            ->execute([$monId, 'Odyssey G9 OLED', 'Samsung', '49" SC90', 1199.99, 10, 2]);
-        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            ->execute([$monId, 'UltraGear 27GR95QE', 'LG', '27" OLED 240Hz', 849.99, 15, 3]);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$monId, 'Odyssey G9 OLED', 'Samsung', '49" SC90', 1199.99, 10, 2, 'https://placehold.co/600x400/000000/FFF?text=Odyssey+G9']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$monId, 'UltraGear 27GR95QE', 'LG', '27" OLED 240Hz', 849.99, 15, 3, 'https://placehold.co/600x400/000000/FFF?text=UltraGear+OLED']);
     }
 
     if ($perId) {
-        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            ->execute([$perId, 'G Pro X Superlight 2', 'Logitech', 'Wireless Mouse', 159.99, 50, 5]);
-        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level) VALUES (?, ?, ?, ?, ?, ?, ?)")
-            ->execute([$perId, 'BlackWidow V4 Pro', 'Razer', 'Mechanical Keyboard', 229.99, 30, 5]);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$perId, 'G Pro X Superlight 2', 'Logitech', 'Wireless Mouse', 159.99, 50, 5, 'https://placehold.co/600x400/000000/FFF?text=G+Pro+X']);
+        $pdo->prepare("INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+            ->execute([$perId, 'BlackWidow V4 Pro', 'Razer', 'Mechanical Keyboard', 229.99, 30, 5, 'https://placehold.co/600x400/000000/FFF?text=BlackWidow+V4']);
     }
 
     echo "Update complete! No data was lost.\n";

@@ -36,11 +36,11 @@ if (!isset($_SESSION['user_id'])) {
                 <?php if ($_SESSION['role'] === 'admin'): ?>
                     <button class="btn btn-primary" onclick="openModal('addModal')">Add Product</button>
                 <?php else: ?>
-                    <button class="header-cart-btn" onclick="openModal('cartModal')">
+                    <button class="header-cart-btn" id="cartBtn" onclick="toggleCart()">
                         🛒 Cart <span class="header-cart-count" id="cart-count">0</span>
                     </button>
                 <?php endif; ?>
-                <button class="btn" onclick="logout()">Logout</button>
+                <button class="btn" id="logoutBtn">Logout</button>
             </div>
         </header>
 
