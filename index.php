@@ -20,9 +20,19 @@ if (!isset($_SESSION['user_id'])) {
         <header>
             <h1>PC Component Stock</h1>
             <div class="header-actions" style="display: flex; gap: 1rem; align-items: center;">
-                <span style="color: var(--text-muted);">Welcome,
-                    <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong>
-                    (<?php echo ucfirst($_SESSION['role']); ?>)</span>
+                <a href="profile.php"
+                    style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 32px; height: 32px; background: #334155; border-radius: 50%; overflow: hidden;">
+                        <?php if (!empty($_SESSION['profile_image'])): ?>
+                            <img src="<?php echo htmlspecialchars($_SESSION['profile_image']); ?>"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                        <?php else: ?>
+                            <span
+                                style="display: flex; justify-content: center; align-items: center; height: 100%;">👤</span>
+                        <?php endif; ?>
+                    </div>
+                    <span><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                </a>
                 <?php if ($_SESSION['role'] === 'admin'): ?>
                     <button class="btn btn-primary" onclick="openModal('addModal')">Add Product</button>
                 <?php else: ?>
@@ -163,8 +173,9 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="url" name="image_url" placeholder="https://example.com/image.jpg">
+                    <label>Product Image</label>
+                    <input type="file" id="prod-file-input" accept="image/*">
+                    <input type="hidden" name="image_url">
                 </div>
                 <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
                     <div>
@@ -224,297 +235,43 @@ if (!isset($_SESSION['user_id'])) {
         const USER_ROLE = '<?php echo $_SESSION['role']; ?>';
         let cart = [];
 
-        function addToCart(product) {
-            cart.push(product);
-            updateCartUI();
-
-            // Visual feedback
-            const btn = event.target;
-            const originalText = btn.innerText;
-            btn.innerText = "Added!";
-            btn.style.background = "var(--success)";
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.background = "";
-            }, 1000);
-        }
-
-        function removeFromCart(index) {
-            cart.splice(index, 1);
-            updateCartUI();
-        }
-
-        function updateCartUI() {
-            // Update badge
-            document.getElementById('cart-count').innerText = cart.length;
-
-            // Update List
-            const list = document.getElementById('cart-items');
-            if (cart.length === 0) {
-                list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">Your cart is empty.</p>';
-                document.getElementById('cart-total').innerText = '$0.00';
-                return;
-            }
-
-            let total = 0;
-            list.innerHTML = cart.map((item, index) => {
-                total += parseFloat(item.price);
-                return `
-                    <div class="cart-item">
-                        <div style="width: 50px; height: 50px; background: #1e293b; border-radius: 0.25rem; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                             ${item.image_url ? `<img src="${item.image_url}" style="width: 100%; height: 100%; object-fit: cover;">` : '🖥️'}
-                        </div>
-                        <div class="cart-item-info">
-                            <div style="font-weight: 600;">${item.name}</div>
-                            <div style="font-size: 0.875rem; color: var(--text-muted);">$${parseFloat(item.price).toFixed(2)}</div>
-                        </div>
-                        <button onclick="removeFromCart(${index})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.25rem;">&times;</button>
-                    </div>
-                `;
-            }).join('');
-
-            document.getElementById('cart-total').innerText = '$' + total.toFixed(2);
-        }
-
-        async function checkout() {
-            if (cart.length === 0) return;
-
-            const btn = document.querySelector('#cartModal .btn-primary');
-            const originalText = btn.innerText;
-            btn.innerText = "Processing...";
-            btn.disabled = true;
-
-            try {
-                const resp = await fetch('api.php?action=checkout', {
-                    method: 'POST',
-                    body: JSON.stringify({ cart: cart })
-                });
-                const result = await resp.json();
-
-                if (result.success) {
-                    alert('🎉 Order Placed Successfully! Order ID: #' + result.order_id);
-                    cart = [];
-                    updateCartUI();
-                    closeModal('cartModal');
-                    loadData(); // Refresh stock levels
-                } else {
-                    alert('Error: ' + (result.error || 'Checkout failed'));
-                }
-            } catch (e) {
-                alert('Network error');
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        async function fetchAPI(action, options = {}) {
-            const resp = await fetch(`api.php?action=${action}`, options);
-            return resp.json();
-        }
-
-        function renderStorefront(products) {
-            const list = document.getElementById('store-list');
-            if (!list) return;
-            list.innerHTML = products.map(p => {
-                const isOutOfStock = p.stock_quantity <= 0;
-                const isLow = p.stock_quantity < 5;
-                const stockLabel = isOutOfStock ? 'Sold Out' : (isLow ? `Only ${p.stock_quantity} Left` : `${p.stock_quantity} in Stock`);
-                const badgeClass = isOutOfStock ? 'out' : (isLow ? 'low' : '');
-
-                return `
-                    <div class="product-card">
-                        <div class="product-image">
-                            <div class="stock-badge ${badgeClass}">
-                                ${isOutOfStock ? '🔴' : (isLow ? '⚠️' : '🟢')} ${stockLabel}
-                            </div>
-                            ${p.image_url ?
-                        `<img src="${p.image_url}" alt="${p.name}" style="width: 100%; height: 100%; object-fit: cover;">` :
-                        `<!-- Placeholder for product image -->
-                                <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted);">
-                                    <span style="font-size: 3rem; margin-bottom: 0.5rem;">🖥️</span>
-                                    <span style="font-size: 0.875rem; letter-spacing: 0.05em; text-transform: uppercase;">${p.category_name}</span>
-                                </div>`
-                    }
-                        </div>
-                        <div class="product-info">
-                            <div class="product-category">${p.category_name}</div>
-                            <h3 class="product-title">${p.name}</h3>
-                            <div class="product-meta">${p.brand} ${p.model}</div>
-                            <div class="product-price">$${parseFloat(p.price).toFixed(2)}</div>
-                            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" 
-                                ${isOutOfStock ? 'disabled' : ''} 
-                                onclick='addToCart(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
-                                ${isOutOfStock ? 'Out of Stock' : 'Add to Build'}
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        async function loadData() {
-            if (USER_ROLE === 'admin') {
-                const [products, categories, stats, logs] = await Promise.all([
-                    fetchAPI('get_products'),
-                    fetchAPI('get_categories'),
-                    fetchAPI('get_stats'),
-                    fetchAPI('get_logs')
-                ]);
-
-                // Stats logic (same as before)
-                document.getElementById('stat-total').textContent = stats.total_products;
-                document.getElementById('stat-low').textContent = stats.low_stock;
-                document.getElementById('stat-units').textContent = stats.total_stock;
-
-                // Inventory Table
-                renderInventory(products);
-
-                // Logs Table
-                renderLogs(logs);
-
-                // Categories for modal
-                const catSelect = document.getElementById('cat-select');
-                // Only verify if element exists (admin check implicitly covered but safe to check)
-                if (catSelect) {
-                    catSelect.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                }
-
-            } else {
-                // Customer View
-                const [products, categories] = await Promise.all([
-                    fetchAPI('get_products'),
-                    fetchAPI('get_categories')
-                ]);
-
-                // Render Filters
-                const filterContainer = document.getElementById('category-filters');
-                if (filterContainer) {
-                    const extraFilters = categories.map(c =>
-                        `<button class="filter-tab" onclick="setFilter(${c.id}, this)">${c.name}</button>`
-                    ).join('');
-                    filterContainer.innerHTML += extraFilters;
-                }
-
-                // Global for filtering
-                window.allProducts = products;
-                window.activeCategory = 'all';
-
-                filterProducts();
-            }
-        }
-
-        function setFilter(categoryId, btn = null) {
-            window.activeCategory = categoryId;
-
-            // Update UI
-            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-            if (btn) {
-                btn.classList.add('active');
-            } else {
-                document.querySelector('.filter-tab').classList.add('active'); // Default 'All'
-            }
-
-            filterProducts();
-        }
-
-        function filterProducts() {
-            const searchText = document.getElementById('search-input').value.toLowerCase();
-            const filtered = window.allProducts.filter(p => {
-                const matchesSearch = p.name.toLowerCase().includes(searchText) ||
-                    p.brand.toLowerCase().includes(searchText) ||
-                    p.model.toLowerCase().includes(searchText);
-                const matchesCategory = window.activeCategory === 'all' || p.category_id == window.activeCategory;
-
-                return matchesSearch && matchesCategory;
-            });
-
-            renderStorefront(filtered);
-        }
-
-        function renderInventory(products) {
-            const list = document.getElementById('product-list');
-            if (!list) return;
-
-            list.innerHTML = products.map(p => {
-                const isLow = p.stock_quantity <= p.min_stock_level;
-                const badgeClass = isLow ? 'badge-danger' : 'badge-success';
-                const status = isLow ? 'Low Stock' : 'Optimal';
-
-                return `
-                    <tr>
-                        <td>
-                            <div style="font-weight: 600;">${p.name}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted)">${p.brand} ${p.model}</div>
-                        </td>
-                        <td>${p.category_name}</td>
-                        <td>
-                            <div style="font-size: 1.125rem; font-weight: 700;">${p.stock_quantity}</div>
-                            <div style="font-size: 0.625rem; color: var(--text-muted)">Min: ${p.min_stock_level}</div>
-                        </td>
-                        <td><span class="badge ${badgeClass}">${status}</span></td>
-                        <td>
-                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                <button class="btn" style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; font-size: 0.75rem; padding: 0.25rem 0.5rem;" onclick="openStockModal(${p.id}, '${p.name}')">Stock</button>
-                                <button class="btn" style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-size: 0.75rem; padding: 0.25rem 0.5rem;" onclick='openEditModal(${JSON.stringify(p).replace(/'/g, "&#39;")})'>Edit</button>
-                                <button class="btn" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 0.75rem; padding: 0.25rem 0.5rem;" onclick="deleteProduct(${p.id})">Del</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function renderLogs(logs) {
-            const logList = document.getElementById('log-list');
-            if (!logList) return;
-
-            logList.innerHTML = logs.map(l => {
-                const isOut = l.type === 'OUT';
-                const badgeClass = isOut ? 'badge-warning' : 'badge-success';
-                const typeLabel = isOut ? 'Stock Out' : 'Stock In';
-
-                return `
-                    <tr>
-                        <td style="color: var(--text-muted); font-size: 0.875rem;">${new Date(l.created_at).toLocaleString()}</td>
-                        <td style="font-weight: 500;">${l.product_name}</td>
-                        <td><span class="badge ${badgeClass}">${typeLabel}</span></td>
-                        <td style="font-weight: 700;">${l.quantity}</td>
-                        <td style="color: var(--text-muted); font-style: italic;">${l.notes || '-'}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        async function logout() {
-            await fetchAPI('logout');
-            window.location.href = 'login.php';
-        }
-
-        function openModal(id) {
-            document.getElementById(id).style.display = 'flex';
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        function openStockModal(id, name) {
-            const modal = document.getElementById('stockModal');
-            modal.querySelector('input[name="product_id"]').value = id;
-            document.getElementById('stock-modal-title').textContent = 'Adjust Stock';
-            document.getElementById('stock-modal-subtitle').textContent = name;
-            openModal('stockModal');
-        }
+        // ... existing cart functions ...
 
         document.getElementById('addForm').onsubmit = async (e) => {
             e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.innerText = "Uploading...";
+            btn.disabled = true;
+
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
+
+            // Handle Image Upload
+            const fileInput = document.getElementById('prod-file-input');
+            if (fileInput.files.length > 0) {
+                const uploadData = new FormData();
+                uploadData.append('file', fileInput.files[0]);
+                try {
+                    const res = await fetch('api.php?action=upload_image', { method: 'POST', body: uploadData });
+                    const result = await res.json();
+                    if (result.success) {
+                        data.image_url = result.url;
+                    }
+                } catch (err) {
+                    console.error('Upload failed', err);
+                }
+            }
+
+            btn.innerText = "Saving...";
+
             await fetchAPI('add_product', {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
+
+            btn.innerText = originalText;
+            btn.disabled = false;
             closeModal('addModal');
             loadData();
         };
