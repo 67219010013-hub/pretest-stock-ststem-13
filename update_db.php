@@ -1,5 +1,5 @@
 <?php
-$host = 'mysql-db';
+$host = 'stock_db';
 $dbname = 'stock_system';
 $username = 'user';
 $password = 'password';
