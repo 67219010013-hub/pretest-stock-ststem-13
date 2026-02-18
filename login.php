@@ -57,6 +57,9 @@
                 }
             } catch (err) {
                 console.error(err);
+                const errorDiv = document.getElementById('error-msg');
+                errorDiv.textContent = 'System Error: Please check console or reset database.';
+                errorDiv.style.display = 'block';
             }
         };
     </script>

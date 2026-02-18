@@ -39,7 +39,7 @@ try {
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['username'] = $user['username'];
                     $_SESSION['role'] = $user['role'];
-                    $_SESSION['profile_image'] = $user['profile_image'];
+                    $_SESSION['profile_image'] = $user['profile_image'] ?? null;
                     echo json_encode(['success' => true, 'role' => $user['role']]);
                 } else {
                     echo json_encode(['success' => false, 'error' => 'Invalid credentials']);
