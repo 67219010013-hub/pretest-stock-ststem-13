@@ -98,21 +98,21 @@ try {
     INSERT INTO categories (name) VALUES 
     ('CPU'), ('GPU'), ('RAM'), ('Motherboard'), ('Storage'), ('PSU'), ('Case'), ('Cooling'), ('Monitor'), ('Peripherals');
 
-    INSERT INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level) VALUES
-    (1, 'Core i9-14900K', 'Intel', '14900K', 589.99, 50, 5),
-    (1, 'Ryzen 9 7950X3D', 'AMD', '7950X3D', 649.99, 40, 5),
-    (2, 'GeForce RTX 4090', 'NVIDIA', 'Founders Edition', 1599.99, 10, 2),
-    (2, 'Radeon RX 7900 XTX', 'Sapphire', 'Nitro+', 999.99, 20, 3),
-    (3, 'Dominator Platinum RGB 32GB', 'Corsair', 'DDR5-6000', 169.99, 100, 10),
-    (4, 'ROG Maximus Z790 Hero', 'ASUS', 'Z790', 629.99, 15, 3),
-    (5, '990 PRO 2TB', 'Samsung', 'NVMe', 179.99, 80, 10),
-    (6, 'HX1000i', 'Corsair', '1000W Platinum', 239.99, 30, 5),
-    (7, 'O11 Dynamic Evo', 'Lian Li', 'Mid-Tower', 159.99, 25, 5),
-    (8, 'Kraken Elite 360', 'NZXT', 'AIO Liquid', 279.99, 35, 5),
-    (9, 'Odyssey G9 OLED', 'Samsung', '49\" SC90', 1199.99, 10, 2),
-    (9, 'UltraGear 27GR95QE', 'LG', '27\" OLED 240Hz', 849.99, 15, 3),
-    (10, 'G Pro X Superlight 2', 'Logitech', 'Wireless Mouse', 159.99, 50, 5),
-    (10, 'BlackWidow V4 Pro', 'Razer', 'Mechanical Keyboard', 229.99, 30, 5);
+    INSERT INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level, image_url) VALUES
+    (1, 'Core i9-14900K', 'Intel', '14900K', 589.99, 50, 5, 'https://placehold.co/600x400/007bff/FFF?text=Core+i9-14900K'),
+    (1, 'Ryzen 9 7950X3D', 'AMD', '7950X3D', 649.99, 40, 5, 'https://placehold.co/600x400/ff9900/000?text=Ryzen+9+7950X3D'),
+    (2, 'GeForce RTX 4090', 'NVIDIA', 'Founders Edition', 1599.99, 10, 2, 'https://placehold.co/600x400/76b900/FFF?text=RTX+4090'),
+    (2, 'Radeon RX 7900 XTX', 'Sapphire', 'Nitro+', 999.99, 20, 3, 'https://placehold.co/600x400/ff0000/FFF?text=RX+7900+XTX'),
+    (3, 'Dominator Platinum RGB 32GB', 'Corsair', 'DDR5-6000', 169.99, 100, 10, 'https://placehold.co/600x400/333/FFF?text=Corsair+Dominator'),
+    (4, 'ROG Maximus Z790 Hero', 'ASUS', 'Z790', 629.99, 15, 3, 'https://placehold.co/600x400/000/FFF?text=ROG+Maximus+Z790'),
+    (5, '990 PRO 2TB', 'Samsung', 'NVMe', 179.99, 80, 10, 'https://placehold.co/600x400/000/FFF?text=Samsung+990+PRO'),
+    (6, 'HX1000i', 'Corsair', '1000W Platinum', 239.99, 30, 5, 'https://placehold.co/600x400/333/FFF?text=Corsair+HX1000i'),
+    (7, 'O11 Dynamic Evo', 'Lian Li', 'Mid-Tower', 159.99, 25, 5, 'https://placehold.co/600x400/ccc/000?text=Lian+Li+O11'),
+    (8, 'Kraken Elite 360', 'NZXT', 'AIO Liquid', 279.99, 35, 5, 'https://placehold.co/600x400/6f42c1/FFF?text=NZXT+Kraken'),
+    (9, 'Odyssey G9 OLED', 'Samsung', '49\" SC90', 1199.99, 10, 2, 'https://placehold.co/600x400/000/FFF?text=Odyssey+G9'),
+    (9, 'UltraGear 27GR95QE', 'LG', '27\" OLED 240Hz', 849.99, 15, 3, 'https://placehold.co/600x400/a50034/FFF?text=UltraGear+OLED'),
+    (10, 'G Pro X Superlight 2', 'Logitech', 'Wireless Mouse', 159.99, 50, 5, 'https://placehold.co/600x400/333/FFF?text=G+Pro+X'),
+    (10, 'BlackWidow V4 Pro', 'Razer', 'Mechanical Keyboard', 229.99, 30, 5, 'https://placehold.co/600x400/44d62c/000?text=BlackWidow+V4');
     ";
 
     $pdo->exec($sql);

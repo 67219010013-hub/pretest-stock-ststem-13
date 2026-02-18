@@ -84,7 +84,31 @@ try {
             ->execute([$perId, 'BlackWidow V4 Pro', 'Razer', 'Mechanical Keyboard', 229.99, 30, 5, 'https://placehold.co/600x400/000000/FFF?text=BlackWidow+V4']);
     }
 
-    echo "Update complete! No data was lost.\n";
+    // 5. Update Images for ALL products (ensure they show up even if product exists)
+    echo "Updating product images...\n";
+    $images = [
+        'Core i9-14900K' => 'https://placehold.co/600x400/007bff/FFF?text=Core+i9-14900K',
+        'Ryzen 9 7950X3D' => 'https://placehold.co/600x400/ff9900/000?text=Ryzen+9+7950X3D',
+        'GeForce RTX 4090' => 'https://placehold.co/600x400/76b900/FFF?text=RTX+4090',
+        'Radeon RX 7900 XTX' => 'https://placehold.co/600x400/ff0000/FFF?text=RX+7900+XTX',
+        'Dominator Platinum RGB 32GB' => 'https://placehold.co/600x400/333/FFF?text=Corsair+Dominator',
+        'ROG Maximus Z790 Hero' => 'https://placehold.co/600x400/000/FFF?text=ROG+Maximus+Z790',
+        '990 PRO 2TB' => 'https://placehold.co/600x400/000/FFF?text=Samsung+990+PRO',
+        'HX1000i' => 'https://placehold.co/600x400/333/FFF?text=Corsair+HX1000i',
+        'O11 Dynamic Evo' => 'https://placehold.co/600x400/ccc/000?text=Lian+Li+O11',
+        'Kraken Elite 360' => 'https://placehold.co/600x400/6f42c1/FFF?text=NZXT+Kraken',
+        'Odyssey G9 OLED' => 'https://placehold.co/600x400/000/FFF?text=Odyssey+G9',
+        'UltraGear 27GR95QE' => 'https://placehold.co/600x400/a50034/FFF?text=UltraGear+OLED',
+        'G Pro X Superlight 2' => 'https://placehold.co/600x400/333/FFF?text=G+Pro+X',
+        'BlackWidow V4 Pro' => 'https://placehold.co/600x400/44d62c/000?text=BlackWidow+V4'
+    ];
+
+    $stmt = $pdo->prepare("UPDATE products SET image_url = ? WHERE name = ?");
+    foreach ($images as $name => $url) {
+        $stmt->execute([$url, $name]);
+    }
+
+    echo "Update complete! All products now have images.\n";
 
 } catch (PDOException $e) {
     echo "Error: " . $e->getMessage() . "\n";
