@@ -76,7 +76,7 @@ INSERT IGNORE INTO users (username, password_hash, role) VALUES
 -- Seed initial categories
 -- Seed initial categories
 INSERT IGNORE INTO categories (name) VALUES 
-('CPU'), ('GPU'), ('RAM'), ('Motherboard'), ('Storage'), ('PSU'), ('Case'), ('Cooling');
+('CPU'), ('GPU'), ('RAM'), ('Motherboard'), ('Storage'), ('PSU'), ('Case'), ('Cooling'), ('Monitor'), ('Peripherals');
 
 -- Seed initial products
 INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level) VALUES
@@ -89,4 +89,8 @@ INSERT IGNORE INTO products (category_id, name, brand, model, price, stock_quant
 ((SELECT id FROM categories WHERE name='Storage'), '990 PRO 2TB', 'Samsung', 'NVMe', 179.99, 80, 10),
 ((SELECT id FROM categories WHERE name='PSU'), 'HX1000i', 'Corsair', '1000W Platinum', 239.99, 30, 5),
 ((SELECT id FROM categories WHERE name='Case'), 'O11 Dynamic Evo', 'Lian Li', 'Mid-Tower', 159.99, 25, 5),
-((SELECT id FROM categories WHERE name='Cooling'), 'Kraken Elite 360', 'NZXT', 'AIO Liquid', 279.99, 35, 5);
+((SELECT id FROM categories WHERE name='Cooling'), 'Kraken Elite 360', 'NZXT', 'AIO Liquid', 279.99, 35, 5),
+((SELECT id FROM categories WHERE name='Monitor'), 'Odyssey G9 OLED', 'Samsung', '49" SC90', 1199.99, 10, 2),
+((SELECT id FROM categories WHERE name='Monitor'), 'UltraGear 27GR95QE', 'LG', '27" OLED 240Hz', 849.99, 15, 3),
+((SELECT id FROM categories WHERE name='Peripherals'), 'G Pro X Superlight 2', 'Logitech', 'Wireless Mouse', 159.99, 50, 5),
+((SELECT id FROM categories WHERE name='Peripherals'), 'BlackWidow V4 Pro', 'Razer', 'Mechanical Keyboard', 229.99, 30, 5);

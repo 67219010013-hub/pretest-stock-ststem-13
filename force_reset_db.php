@@ -96,7 +96,23 @@ try {
     );
 
     INSERT INTO categories (name) VALUES 
-    ('CPU'), ('GPU'), ('RAM'), ('Motherboard'), ('Storage'), ('PSU'), ('Case'), ('Cooling');
+    ('CPU'), ('GPU'), ('RAM'), ('Motherboard'), ('Storage'), ('PSU'), ('Case'), ('Cooling'), ('Monitor'), ('Peripherals');
+
+    INSERT INTO products (category_id, name, brand, model, price, stock_quantity, min_stock_level) VALUES
+    (1, 'Core i9-14900K', 'Intel', '14900K', 589.99, 50, 5),
+    (1, 'Ryzen 9 7950X3D', 'AMD', '7950X3D', 649.99, 40, 5),
+    (2, 'GeForce RTX 4090', 'NVIDIA', 'Founders Edition', 1599.99, 10, 2),
+    (2, 'Radeon RX 7900 XTX', 'Sapphire', 'Nitro+', 999.99, 20, 3),
+    (3, 'Dominator Platinum RGB 32GB', 'Corsair', 'DDR5-6000', 169.99, 100, 10),
+    (4, 'ROG Maximus Z790 Hero', 'ASUS', 'Z790', 629.99, 15, 3),
+    (5, '990 PRO 2TB', 'Samsung', 'NVMe', 179.99, 80, 10),
+    (6, 'HX1000i', 'Corsair', '1000W Platinum', 239.99, 30, 5),
+    (7, 'O11 Dynamic Evo', 'Lian Li', 'Mid-Tower', 159.99, 25, 5),
+    (8, 'Kraken Elite 360', 'NZXT', 'AIO Liquid', 279.99, 35, 5),
+    (9, 'Odyssey G9 OLED', 'Samsung', '49\" SC90', 1199.99, 10, 2),
+    (9, 'UltraGear 27GR95QE', 'LG', '27\" OLED 240Hz', 849.99, 15, 3),
+    (10, 'G Pro X Superlight 2', 'Logitech', 'Wireless Mouse', 159.99, 50, 5),
+    (10, 'BlackWidow V4 Pro', 'Razer', 'Mechanical Keyboard', 229.99, 30, 5);
     ";
 
     $pdo->exec($sql);
