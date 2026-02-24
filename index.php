@@ -233,9 +233,10 @@ if (!isset($_SESSION['user_id'])) {
 
     <script>
         const USER_ROLE = '<?php echo $_SESSION['role']; ?>';
+        let allProducts = [];
+        let allCategories = [];
+        let currentFilter = 'all';
         let cart = [];
-
-        // ... existing cart functions ...
 
         async function fetchAPI(action, options = {}) {
             try {
@@ -244,54 +245,107 @@ if (!isset($_SESSION['user_id'])) {
                 return await res.json();
             } catch (err) {
                 console.error(err);
-                alert('Operation failed. See console.');
                 return null;
             }
         }
 
         async function loadData() {
             try {
-                // Determine what to load based on role
-                if (USER_ROLE === 'admin' || USER_ROLE === 'customer') {
-                    const products = await fetchAPI('get_products');
-                    const categories = await fetchAPI('get_categories');
-                    if (products) renderProducts(products, categories);
-                    if (categories) renderCategories(categories);
+                const products = await fetchAPI('get_products');
+                const categories = await fetchAPI('get_categories');
+
+                if (products) allProducts = products;
+                if (categories) {
+                    allCategories = categories;
+                    renderCategories(categories);
                 }
 
                 if (USER_ROLE === 'admin') {
                     const stats = await fetchAPI('get_stats');
+                    const logs = await fetchAPI('get_logs');
                     if (stats) renderStats(stats);
+                    if (logs) renderLogs(logs);
                 }
 
+                filterProducts();
                 updateCartUI();
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+            }
         }
 
-        function renderProducts(products, categories) {
-            const grid = document.getElementById('product-grid');
+        function renderProducts(products) {
+            if (USER_ROLE === 'admin') {
+                renderAdminProducts(products);
+            } else {
+                renderCustomerProducts(products);
+            }
+        }
+
+        function renderAdminProducts(products) {
+            const list = document.getElementById('product-list');
+            if (!list) return;
+
+            list.innerHTML = products.map(p => {
+                const isLow = p.stock_quantity <= p.min_stock_level;
+                const status = p.stock_quantity <= 0 ?
+                    '<span style="color:var(--danger)">Out of Stock</span>' :
+                    (isLow ? '<span style="color:var(--warning)">Low Stock</span>' : '<span style="color:var(--success)">Available</span>');
+
+                return `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="width: 40px; height: 40px; border-radius: 8px; overflow: hidden; background: var(--glass);">
+                                    ${p.image_url ? `<img src="${p.image_url}" style="width:100%; height:100%; object-fit:cover;">` : '<span style="display:flex; justify-content:center; align-items:center; height:100%; font-size:1.2rem;">📦</span>'}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600;">${p.name}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">${p.brand} ${p.model}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${p.category_name}</td>
+                        <td>
+                            <div style="font-weight: 700;">${p.stock_quantity} <span style="font-weight: 400; color: var(--text-muted);">/ ${p.min_stock_level}</span></div>
+                        </td>
+                        <td>${status}</td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-icon" onclick="openStockModal(${p.id}, '${p.name.replace(/'/g, "\\'")}')" title="Adjust Stock">📦</button>
+                                <button class="btn btn-icon" onclick="deleteProduct(${p.id})" title="Delete" style="color: var(--danger)">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderCustomerProducts(products) {
+            const grid = document.getElementById('store-list');
             if (!grid) return;
 
-            // Simple category map
-            const catMap = {};
-            if (categories) categories.forEach(c => catMap[c.id] = c.name);
+            if (products.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 4rem; color: var(--text-muted);">No components found matching your search.</div>';
+                return;
+            }
 
             grid.innerHTML = products.map(p => `
                 <div class="product-card">
                     <div class="product-image">
-                        ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : '<div style="height:100%; display:flex; align-items:center; justify-content:center; background:#f1f5f9; color:#64748b;">No Image</div>'}
+                        ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : '<div style="height:100%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); color:var(--text-muted);">No Image</div>'}
                         ${p.stock_quantity <= 0 ? '<div class="stock-badge out">Out of Stock</div>' :
                     p.stock_quantity <= p.min_stock_level ? '<div class="stock-badge low">Low Stock</div>' : ''}
                     </div>
                     <div class="product-info">
-                        <div class="product-category">${catMap[p.category_id] || 'Component'}</div>
+                        <div class="product-category">${p.category_name}</div>
                         <h3 class="product-title">${p.name}</h3>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
-                            <div class="product-price">$${parseFloat(p.price).toFixed(2)}</div>
-                            ${USER_ROLE === 'admin' ?
-                    `<button class="btn-icon" onclick="openStockModal(${p.id}, '${p.name}')" title="Adjust Stock">📦</button>` :
-                    `<button class="btn-icon" onclick="addToCart(${p.id}, '${p.name}', ${p.price})" ${p.stock_quantity <= 0 ? 'disabled' : ''}>🛒</button>`
-                }
+                        <div class="product-meta">${p.brand} | ${p.model}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                            <div class="product-price">$${parseFloat(p.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                            <button class="btn btn-primary btn-icon" onclick="addToCart(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.price})" ${p.stock_quantity <= 0 ? 'disabled' : ''} style="width: 40px; height: 40px; padding: 0; border-radius: 12px;">
+                                🛒
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -303,46 +357,112 @@ if (!isset($_SESSION['user_id'])) {
             if (select) {
                 select.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             }
+
+            const scroll = document.getElementById('category-filters');
+            if (scroll) {
+                const activeClass = currentFilter === 'all' ? 'active' : '';
+                scroll.innerHTML = `<button class="filter-tab ${activeClass}" onclick="setFilter('all')">All Components</button>` +
+                    categories.map(c => {
+                        const active = currentFilter == c.id ? 'active' : '';
+                        return `<button class="filter-tab ${active}" onclick="setFilter(${c.id})">${c.name}</button>`;
+                    }).join('');
+            }
         }
 
         function renderStats(stats) {
-            // Implementation for dashboard stats if elements exist
+            const total = document.getElementById('stat-total');
+            const low = document.getElementById('stat-low');
+            const units = document.getElementById('stat-units');
+
+            if (total) total.innerText = stats.total_products;
+            if (low) low.innerText = stats.low_stock;
+            if (units) units.innerText = stats.total_stock;
+        }
+
+        function renderLogs(logs) {
+            const list = document.getElementById('log-list');
+            if (!list) return;
+
+            list.innerHTML = logs.map(l => `
+                <tr>
+                    <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(l.created_at).toLocaleString()}</td>
+                    <td style="font-weight: 500;">${l.product_name || 'Deleted Product'}</td>
+                    <td>
+                        <span style="color: ${l.type === 'IN' ? 'var(--success)' : 'var(--danger)'}; font-weight: 700;">
+                            ${l.type}
+                        </span>
+                    </td>
+                    <td>${l.quantity}</td>
+                    <td style="font-size: 0.85rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${l.notes}">
+                        ${l.notes || '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterProducts() {
+            const search = document.getElementById('search-input')?.value.toLowerCase() || '';
+            const filtered = allProducts.filter(p => {
+                const matchesSearch = p.name.toLowerCase().includes(search) ||
+                    p.brand.toLowerCase().includes(search) ||
+                    p.model.toLowerCase().includes(search);
+                const matchesCategory = currentFilter === 'all' || p.category_id == currentFilter;
+                return matchesSearch && matchesCategory;
+            });
+            renderProducts(filtered);
+        }
+
+        function setFilter(cid) {
+            currentFilter = cid;
+            const tabs = document.querySelectorAll('.filter-tab');
+            tabs.forEach(t => t.classList.remove('active'));
+
+            // Find the clicked tab
+            event.target.classList.add('active');
+
+            filterProducts();
         }
 
         function addToCart(id, name, price) {
             const existing = cart.find(i => i.id === id);
             if (existing) {
-                // limit to 1 per click? or check stock?
-                // For MVP, just add.
+                existing.qty++;
             } else {
                 cart.push({ id, name, price, qty: 1 });
             }
             updateCartUI();
+
+            // Subtle toast or animation?
+            showToast(`Added ${name} to cart`);
         }
 
         function updateCartUI() {
-            const cartBtn = document.querySelector('.cart-btn span');
-            if (cartBtn) cartBtn.textContent = `Cart (${cart.length})`;
+            const countEl = document.getElementById('cart-count');
+            if (countEl) countEl.textContent = cart.reduce((sum, item) => sum + item.qty, 0);
 
             const cartItems = document.getElementById('cart-items');
             if (!cartItems) return;
 
             if (cart.length === 0) {
-                cartItems.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);">Cart is empty</div>';
+                cartItems.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);">Your cart is empty</div>';
                 document.getElementById('cart-total').textContent = '$0.00';
                 return;
             }
 
             let total = 0;
             cartItems.innerHTML = cart.map((item, index) => {
-                total += item.price;
+                const itemTotal = item.price * item.qty;
+                total += itemTotal;
                 return `
-                <div class="cart-item">
-                    <div>
-                        <div style="font-weight: 500;">${item.name}</div>
-                        <div style="font-size: 0.875rem; color: var(--text-muted);">$${item.price.toFixed(2)}</div>
+                <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(255,255,255,0.02); margin-bottom: 0.5rem; border-radius: 0.75rem; border: 1px solid var(--border);">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">${item.name}</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">$${item.price.toFixed(2)} × ${item.qty}</div>
                     </div>
-                    <button class="btn-icon" onclick="removeFromCart(${index})" style="color: #ef4444;">×</button>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="font-weight: 700;">$${itemTotal.toFixed(2)}</div>
+                        <button class="btn btn-icon" onclick="removeFromCart(${index})" style="color: var(--danger); padding: 5px; min-width: 30px;">×</button>
+                    </div>
                 </div>
                 `;
             }).join('');
@@ -351,43 +471,38 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         function removeFromCart(index) {
-            cart.splice(index, 1);
+            if (cart[index].qty > 1) {
+                cart[index].qty--;
+            } else {
+                cart.splice(index, 1);
+            }
             updateCartUI();
         }
 
         function toggleCart() {
             const modal = document.getElementById('cartModal');
-            if (modal) modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+            if (modal) {
+                const isFlex = modal.style.display === 'flex';
+                modal.style.display = isFlex ? 'none' : 'flex';
+            }
         }
 
-        // Expose to window for onclick
-        window.addToCart = addToCart;
-        window.removeFromCart = removeFromCart;
-        window.toggleCart = toggleCart;
-        window.openStockModal = (id, name) => {
-            document.getElementById('stock-modal-title').innerText = `Adjust Stock: ${name}`;
-            document.querySelector('input[name="product_id"]').value = id;
-            openModal('stockModal');
-        };
-        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
-        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
-
-        // Logout
-        document.getElementById('logoutBtn')?.addEventListener('click', async (e) => {
-            e.preventDefault();
-            await fetchAPI('logout');
-            window.location.href = 'login.php';
-        });
-
-        // Checkout
-        document.getElementById('checkoutBtn')?.addEventListener('click', async () => {
+        async function checkout() {
             if (cart.length === 0) return;
+
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
             const res = await fetchAPI('checkout', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ cart })
             });
+
             if (res && res.success) {
-                alert('Order placed successfully! Order #' + res.order_id);
+                alert('Success! Order #' + res.order_id + ' has been placed.');
                 cart = [];
                 updateCartUI();
                 toggleCart();
@@ -395,14 +510,60 @@ if (!isset($_SESSION['user_id'])) {
             } else {
                 alert(res ? res.error : 'Checkout failed');
             }
-        });
 
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('Are you sure you want to delete this product?')) return;
+            const res = await fetchAPI('delete_product', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (res && res.success) loadData();
+        }
+
+        function showToast(msg) {
+            // Simple temporary notification
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 2rem; right: 2rem;
+                background: var(--primary); color: white;
+                padding: 1rem 2rem; border-radius: 1rem;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                z-index: 9999; animation: fadeIn 0.3s ease-out;
+            `;
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
+        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+
+        window.openStockModal = (id, name) => {
+            document.getElementById('stock-modal-title').innerText = `Adjust Stock: ${name}`;
+            document.querySelector('input[name="product_id"]').value = id;
+            openModal('stockModal');
+        };
+
+        // Event Listeners
+        document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+            await fetchAPI('logout');
+            window.location.href = 'login.php';
+        });
 
         document.getElementById('addForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             const originalText = btn.innerText;
-            btn.innerText = "Uploading...";
+            btn.innerText = "Saving...";
             btn.disabled = true;
 
             const formData = new FormData(e.target);
@@ -416,39 +577,42 @@ if (!isset($_SESSION['user_id'])) {
                 try {
                     const res = await fetch('api.php?action=upload_image', { method: 'POST', body: uploadData });
                     const result = await res.json();
-                    if (result.success) {
-                        data.image_url = result.url;
-                    }
-                } catch (err) {
-                    console.error('Upload failed', err);
-                }
+                    if (result.success) data.image_url = result.url;
+                } catch (err) { console.error('Upload failed', err); }
             }
 
-            btn.innerText = "Saving...";
-
-            await fetchAPI('add_product', {
+            const res = await fetchAPI('add_product', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
 
+            if (res && res.success) {
+                closeModal('addModal');
+                e.target.reset();
+                loadData();
+            }
+
             btn.innerText = originalText;
             btn.disabled = false;
-            closeModal('addModal');
-            loadData();
         };
 
         document.getElementById('stockForm').onsubmit = async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
-            await fetchAPI('update_stock', {
+            const res = await fetchAPI('update_stock', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            closeModal('stockModal');
-            loadData();
+            if (res && res.success) {
+                closeModal('stockModal');
+                loadData();
+            }
         };
 
+        // Initialize
         loadData();
     </script>
 </body>
