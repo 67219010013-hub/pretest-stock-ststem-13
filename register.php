@@ -10,51 +10,90 @@
 </head>
 
 <body class="login-body">
-    <div class="login-card">
+    <div class="login-card" style="max-width: 500px; margin: 2rem auto;">
+        <div class="login-logo">
+            ✨
+        </div>
         <div class="login-header">
             <h1>Create Account</h1>
-            <p>Join us to build your dream PC.</p>
+            <p>Join our community of PC enthusiasts</p>
         </div>
         <form id="registerForm">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required placeholder="User123">
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" required placeholder="John Doe">
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>Profile Image</label>
-                <input type="file" id="file-input" accept="image/*">
-                <input type="hidden" name="profile_image">
+                <div
+                    style="display: flex; gap: 1rem; align-items: center; background: rgba(15, 23, 42, 0.4); padding: 0.75rem; border-radius: 1rem; border: 1px dashed var(--border);">
+                    <input type="file" id="file-input" accept="image/*"
+                        style="border: none; background: transparent; padding: 0; font-size: 0.8rem;">
+                    <input type="hidden" name="profile_image">
+                </div>
             </div>
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" name="full_name" required placeholder="John Doe">
-            </div>
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" name="username" required placeholder="Choose a username">
-            </div>
+
             <div class="form-group">
                 <label>Address</label>
-                <input type="text" name="address" placeholder="123 Street, City">
+                <input type="text" name="address" placeholder="123 Alpha St, Digital City">
             </div>
+
             <div class="form-group">
-                <label>Phone</label>
-                <input type="tel" name="phone" placeholder="081-234-5678">
+                <label>Phone Number</label>
+                <input type="tel" name="phone" placeholder="+66 81 234 5678">
             </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" required placeholder="Min 6 characters">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" name="password" id="password" required placeholder="••••••••"
+                            style="padding-right: 3rem;">
+                        <button type="button" class="password-toggle" onclick="togglePassword('password', this)"
+                            style="right: 0.5rem; font-size: 1rem;">👁️</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Confirm</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" name="confirm_password" id="confirm_password" required
+                            placeholder="••••••••" style="padding-right: 3rem;">
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirm_password', this)"
+                            style="right: 0.5rem; font-size: 1rem;">👁️</button>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Confirm Password</label>
-                <input type="password" name="confirm_password" required placeholder="Repeat password">
-            </div>
+
             <div id="error-msg" class="error-message"></div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
-            <div style="margin-top: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.875rem;">
-                Already have an account? <a href="login.php" style="color: var(--primary); text-decoration: none;">Sign
-                    In</a>
+            <button type="submit" class="btn btn-primary"
+                style="width: 100%; padding: 1rem; font-size: 1rem; margin-top: 1rem;">Create My Account</button>
+            <div
+                style="margin-top: 2rem; text-align: center; color: var(--text-muted); font-size: 0.9rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                Already have an account? <a href="login.php"
+                    style="color: var(--primary); text-decoration: none; font-weight: 700;">Sign In</a>
             </div>
         </form>
     </div>
 
     <script>
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🔒';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
         document.getElementById('registerForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');

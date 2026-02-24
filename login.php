@@ -11,29 +11,51 @@
 
 <body class="login-body">
     <div class="login-card">
+        <div class="login-logo">
+            📦
+        </div>
         <div class="login-header">
             <h1>Welcome Back</h1>
-            <p>Enter your credentials to access the stock system.</p>
+            <p>Access your PC assembly dashboard</p>
         </div>
         <form id="loginForm">
             <div class="form-group">
                 <label>Username</label>
-                <input type="text" name="username" required placeholder="admin">
+                <input type="text" name="username" required placeholder="Enter your username">
             </div>
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 2rem;">
                 <label>Password</label>
-                <input type="password" name="password" required placeholder="••••••••">
+                <div class="password-input-wrapper">
+                    <input type="password" name="password" id="password" required placeholder="Enter your password"
+                        style="padding-right: 3.5rem;">
+                    <button type="button" class="password-toggle" onclick="togglePassword('password', this)">
+                        👁️
+                    </button>
+                </div>
             </div>
             <div id="error-msg" class="error-message"></div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
-            <div style="margin-top: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.875rem;">
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem;">Sign In
+                to System</button>
+            <div
+                style="margin-top: 2rem; text-align: center; color: var(--text-muted); font-size: 0.9rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
                 Don't have an account? <a href="register.php"
-                    style="color: var(--primary); text-decoration: none;">Register</a>
+                    style="color: var(--primary); text-decoration: none; font-weight: 700;">Join now</a>
             </div>
         </form>
     </div>
 
     <script>
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🔒';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
         document.getElementById('loginForm').onsubmit = async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);

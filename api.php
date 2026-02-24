@@ -322,6 +322,129 @@ try {
             }
             break;
 
+        case 'get_ai_recommendation':
+            requireAuth();
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $budget = floatval($data['budget'] ?? 0);
+                $usage = $data['usage'] ?? 'gaming'; // gaming, workstation, office
+
+                if ($budget <= 0) {
+                    echo json_encode(['error' => 'Please provide a valid budget']);
+                    exit;
+                }
+
+                // Fetch all available products grouped by category
+                $stmt = $pdo->query("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.stock_quantity > 0");
+                $allProducts = $stmt->fetchAll();
+
+                $categories = [];
+                foreach ($allProducts as $p) {
+                    $categories[$p['category_name']][] = $p;
+                }
+
+                // Sort category products by price
+                foreach ($categories as $catName => &$prods) {
+                    usort($prods, function ($a, $b) {
+                        return $a['price'] <=> $b['price'];
+                    });
+                }
+
+                $recommendation = [];
+                $totalPrice = 0;
+                $explanation = "";
+
+                // Heuristic selection logic
+                // Allocation ratios based on usage
+                $ratios = [
+                    'gaming' => ['GPU' => 0.45, 'CPU' => 0.20, 'Motherboard' => 0.10, 'RAM' => 0.08, 'Storage' => 0.07, 'PSU' => 0.05, 'Case' => 0.05],
+                    'workstation' => ['CPU' => 0.35, 'GPU' => 0.25, 'Motherboard' => 0.15, 'RAM' => 0.12, 'Storage' => 0.08, 'PSU' => 0.05],
+                    'office' => ['CPU' => 0.30, 'RAM' => 0.20, 'Storage' => 0.20, 'Motherboard' => 0.15, 'PSU' => 0.15],
+                ];
+
+                $usageRatios = $ratios[$usage] ?? $ratios['gaming'];
+                $criticalCategories = array_keys($usageRatios);
+
+                // Initial selection
+                foreach ($criticalCategories as $cat) {
+                    if (!isset($categories[$cat]))
+                        continue;
+
+                    $targetPrice = $budget * $usageRatios[$cat];
+                    $bestMatch = null;
+
+                    // Find product closest to target price but not exceeding too much if budget allows
+                    foreach ($categories[$cat] as $p) {
+                        if ($p['price'] <= $targetPrice * 1.2) {
+                            $bestMatch = $p;
+                        }
+                    }
+
+                    if ($bestMatch) {
+                        $recommendation[$cat] = $bestMatch;
+                        $totalPrice += $bestMatch['price'];
+                    }
+                }
+
+                // Optimization: If over budget, downgrade cheapest components
+                while ($totalPrice > $budget && count($recommendation) > 0) {
+                    $catToDowngrade = null;
+                    $maxCurrentPrice = 0;
+
+                    // Logic to pick which one to downgrade (not the primary one for the usage)
+                    foreach ($recommendation as $cat => $p) {
+                        if ($catToDowngrade === null || ($p['price'] > 50)) {
+                            $catToDowngrade = $cat;
+                        }
+                    }
+
+                    if ($catToDowngrade) {
+                        $currentIdx = 0;
+                        foreach ($categories[$recommendation[$catToDowngrade]['category_name']] as $idx => $p) {
+                            if ($p['id'] == $recommendation[$catToDowngrade]['id']) {
+                                $currentIdx = $idx;
+                                break;
+                            }
+                        }
+
+                        if ($currentIdx > 0) {
+                            $cheaper = $categories[$recommendation[$catToDowngrade]['category_name']][$currentIdx - 1];
+                            $totalPrice -= $recommendation[$catToDowngrade]['price'];
+                            $recommendation[$catToDowngrade] = $cheaper;
+                            $totalPrice += $cheaper['price'];
+                        } else {
+                            // Can't downgrade further, stop
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+
+                // AI Explanation generation
+                if ($usage === 'gaming') {
+                    $explanation = "For your Gaming build, I prioritized the GPU and CPU to ensure maximum frame rates. ";
+                    if (isset($recommendation['GPU']))
+                        $explanation .= "The " . $recommendation['GPU']['name'] . " will handle the heavy lifting for 1440p/4K gaming. ";
+                } else if ($usage === 'workstation') {
+                    $explanation = "For this Workstation setup, I focused on a high-thread-count CPU and sufficient RAM for multitasking and rendering. ";
+                } else {
+                    $explanation = "I've selected reliable and efficient components perfect for productivity and daily tasks while staying well within your budget. ";
+                }
+
+                $explanation .= "This build comes to a total of $" . number_format($totalPrice, 2) . ".";
+
+                echo json_encode([
+                    'success' => true,
+                    'recommendation' => array_values($recommendation),
+                    'total_price' => $totalPrice,
+                    'explanation' => $explanation,
+                    'usage' => $usage,
+                    'budget' => $budget
+                ]);
+            }
+            break;
+
         default:
             echo json_encode(['error' => 'Invalid action']);
             break;

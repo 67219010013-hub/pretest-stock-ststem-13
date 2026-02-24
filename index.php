@@ -40,6 +40,11 @@ if (!isset($_SESSION['user_id'])) {
                         🛒 Cart <span class="header-cart-count" id="cart-count">0</span>
                     </button>
                 <?php endif; ?>
+                <?php if ($_SESSION['role'] === 'customer'): ?>
+                    <a href="ai_builder.php" class="btn" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); color: #a78bfa; text-decoration: none; font-size: 0.75rem;">
+                        ✨ AI Builder
+                    </a>
+                <?php endif; ?>
                 <button class="btn" id="logoutBtn">Logout</button>
             </div>
         </header>
@@ -104,8 +109,24 @@ if (!isset($_SESSION['user_id'])) {
         <?php else: ?>
             <!-- CUSTOMER STOREFRONT -->
             <div class="hero-banner">
-                <h2>Build Your Dream PC</h2>
-                <p>Select premium components for your ultimate setup.</p>
+                <div style="position: relative; z-index: 1;">
+                    <div
+                        style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.3); padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.75rem; font-weight: 800; color: #a78bfa; text-transform: uppercase; margin-bottom: 1.5rem; backdrop-filter: blur(4px);">
+                        ✨ New: AI-Powered PC Architect
+                    </div>
+                    <h2>Build Your Dream PC</h2>
+                    <p style="margin-bottom: 2rem;">Select premium components for your ultimate setup or let our AI
+                        architect a build for you.</p>
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <a href="ai_builder.php" class="btn btn-primary" style="padding: 1rem 2.5rem; font-size: 1rem;">
+                            🚀 Use AI PC Builder
+                        </a>
+                        <button class="btn" style="padding: 1rem 2.5rem; font-size: 1rem;"
+                            onclick="document.getElementById('search-input').focus()">
+                            Browse Components
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Store Controls -->
@@ -236,7 +257,7 @@ if (!isset($_SESSION['user_id'])) {
         let allProducts = [];
         let allCategories = [];
         let currentFilter = 'all';
-        let cart = [];
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
 
         async function fetchAPI(action, options = {}) {
             try {
@@ -431,6 +452,7 @@ if (!isset($_SESSION['user_id'])) {
                 cart.push({ id, name, price, qty: 1 });
             }
             updateCartUI();
+            localStorage.setItem('cart', JSON.stringify(cart));
 
             // Subtle toast or animation?
             showToast(`Added ${name} to cart`);
@@ -477,6 +499,7 @@ if (!isset($_SESSION['user_id'])) {
                 cart.splice(index, 1);
             }
             updateCartUI();
+            localStorage.setItem('cart', JSON.stringify(cart));
         }
 
         function toggleCart() {
@@ -504,6 +527,7 @@ if (!isset($_SESSION['user_id'])) {
             if (res && res.success) {
                 alert('Success! Order #' + res.order_id + ' has been placed.');
                 cart = [];
+                localStorage.setItem('cart', JSON.stringify(cart));
                 updateCartUI();
                 toggleCart();
                 loadData();
