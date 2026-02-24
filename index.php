@@ -41,7 +41,8 @@ if (!isset($_SESSION['user_id'])) {
                     </button>
                 <?php endif; ?>
                 <?php if ($_SESSION['role'] === 'customer'): ?>
-                    <a href="ai_builder.php" class="btn" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); color: #a78bfa; text-decoration: none; font-size: 0.75rem;">
+                    <a href="ai_builder.php" class="btn"
+                        style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); color: #a78bfa; text-decoration: none; font-size: 0.75rem;">
                         ✨ AI Builder
                     </a>
                 <?php endif; ?>
@@ -149,20 +150,22 @@ if (!isset($_SESSION['user_id'])) {
             <!-- Cart Modal -->
             <div id="cartModal" class="modal">
                 <div class="modal-content">
-                    <h2>Your Build</h2>
-                    <div id="cart-items" style="max-height: 400px; overflow-y: auto; margin-bottom: 1rem;">
-                        <!-- Cart items loaded here -->
-                        <p style="color: var(--text-muted); text-align: center;">Your cart is empty.</p>
+                    <h2>Your PC Build</h2>
+                    <div id="cart-items"
+                        style="max-height: 450px; overflow-y: auto; margin-bottom: 1rem; padding-right: 0.5rem;">
+                        <p style="color: var(--text-muted); text-align: center; padding: 3rem;">Your build is empty.</p>
                     </div>
-                    <div class="cart-total">
-                        <span>Total</span>
-                        <span id="cart-total">$0.00</span>
+                    <div class="cart-total-box">
+                        <div>
+                            <div class="cart-total-label">Subtotal Estimate</div>
+                            <div class="cart-total-value" id="cart-total">$0.00</div>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                        <button type="button" class="btn btn-primary" style="flex: 1;"
-                            onclick="checkout()">Checkout</button>
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="button" class="btn btn-primary" style="flex: 2; height: 56px; font-size: 1rem;"
+                            onclick="checkout()">Finalize Build</button>
                         <button type="button" class="btn" onclick="closeModal('cartModal')"
-                            style="background: var(--glass);">Close</button>
+                            style="flex: 1; height: 56px; background: rgba(255,255,255,0.05);">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -476,14 +479,14 @@ if (!isset($_SESSION['user_id'])) {
                 const itemTotal = item.price * item.qty;
                 total += itemTotal;
                 return `
-                <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(255,255,255,0.02); margin-bottom: 0.5rem; border-radius: 0.75rem; border: 1px solid var(--border);">
+                <div class="cart-item">
                     <div style="flex: 1;">
-                        <div style="font-weight: 600;">${item.name}</div>
-                        <div style="font-size: 0.875rem; color: var(--text-muted);">$${item.price.toFixed(2)} × ${item.qty}</div>
+                        <div style="font-weight: 700; color: white; margin-bottom: 0.25rem;">${item.name}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">$${item.price.toFixed(2)} × ${item.qty}</div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <div style="font-weight: 700;">$${itemTotal.toFixed(2)}</div>
-                        <button class="btn btn-icon" onclick="removeFromCart(${index})" style="color: var(--danger); padding: 5px; min-width: 30px;">×</button>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="font-weight: 800; color: var(--secondary);">$${itemTotal.toFixed(2)}</div>
+                        <button class="btn btn-icon" onclick="removeFromCart(${index})" style="color: var(--danger); background: rgba(239, 68, 68, 0.1); width: 32px; height: 32px; border-radius: 8px;">×</button>
                     </div>
                 </div>
                 `;

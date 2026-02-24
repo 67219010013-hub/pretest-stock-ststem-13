@@ -91,10 +91,19 @@ try {
         $pdo->exec($sql);
     }
 
-    // Check if image_url updates are needed (Migration)
+    // Migration for Products: image_url
     $stmt = $pdo->query("SHOW COLUMNS FROM products LIKE 'image_url'");
     if ($stmt->rowCount() == 0) {
         $pdo->exec("ALTER TABLE products ADD COLUMN image_url TEXT");
+    }
+
+    // Migration for Users: add missing profile columns
+    $userColumns = ['full_name' => 'VARCHAR(100)', 'address' => 'TEXT', 'phone' => 'VARCHAR(20)', 'profile_image' => 'VARCHAR(255)'];
+    foreach ($userColumns as $col => $type) {
+        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE '$col'");
+        if ($stmt->rowCount() == 0) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN $col $type");
+        }
     }
 
     // Auto-seed if empty
