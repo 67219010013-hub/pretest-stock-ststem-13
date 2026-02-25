@@ -346,21 +346,51 @@ if (!isset($_SESSION['user_id'])) {
                 'Cooling': '❄️'
             };
 
-            list.innerHTML = data.recommendation.map(p => `
+            list.innerHTML = data.recommendation.map((p, idx) => `
                 <div class="part-card">
                     <div class="part-icon">${icons[p.category_name] || '📦'}</div>
-                    <div class="part-info">
+                    <div class="part-info" style="flex: 1;">
                         <div style="font-size: 0.7rem; color: var(--secondary); font-weight: 800; text-transform: uppercase;">${p.category_name}</div>
                         <h4>${p.name}</h4>
                         <p>${p.brand} ${p.model}</p>
                         <div class="part-price">$${parseFloat(p.price).toFixed(2)}</div>
                     </div>
+                    <button class="btn btn-icon" onclick="addToCart(event, ${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.price})" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.2); width: 36px; height: 36px; border-radius: 10px;">
+                        🛒
+                    </button>
                 </div>
             `).join('');
 
             total.innerText = '$' + parseFloat(data.total_price).toLocaleString(undefined, { minimumFractionDigits: 2 });
             result.style.display = 'block';
             result.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function addToCart(event, id, name, price) {
+            price = parseFloat(price) || 0;
+            let cart = [];
+            try {
+                const stored = localStorage.getItem('cart');
+                cart = stored ? JSON.parse(stored) : [];
+                if (!Array.isArray(cart)) cart = [];
+            } catch (e) { cart = []; }
+            const existing = cart.find(i => i.id === id);
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ id, name, price: parseFloat(price), qty: 1 });
+            }
+            localStorage.setItem('cart', JSON.stringify(cart));
+
+            // Show a simple toast or alert
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '✅';
+            btn.style.borderColor = 'var(--success)';
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.borderColor = 'rgba(139, 92, 246, 0.2)';
+            }, 2000);
         }
 
         document.getElementById('add-all-btn').onclick = () => {

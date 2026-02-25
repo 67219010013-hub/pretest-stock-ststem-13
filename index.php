@@ -163,7 +163,7 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
                     <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                         <button type="button" class="btn btn-primary" style="flex: 2; height: 56px; font-size: 1rem;"
-                            onclick="checkout()">Finalize Build</button>
+                            onclick="checkout(event)">Finalize Build</button>
                         <button type="button" class="btn" onclick="closeModal('cartModal')"
                             style="flex: 1; height: 56px; background: rgba(255,255,255,0.05);">Cancel</button>
                     </div>
@@ -198,7 +198,12 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
                 <div class="form-group">
                     <label>Product Image</label>
-                    <input type="file" id="prod-file-input" accept="image/*">
+                    <div id="add-img-preview"
+                        style="width: 100%; height: 150px; background: var(--glass); border-radius: 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed var(--border);">
+                        <span style="color: var(--text-muted);">No image selected</span>
+                    </div>
+                    <input type="file" id="prod-file-input" accept="image/*"
+                        onchange="previewImage(this, 'add-img-preview')">
                     <input type="hidden" name="image_url">
                 </div>
                 <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
@@ -224,7 +229,58 @@ if (!isset($_SESSION['user_id'])) {
         </div>
     </div>
 
-    <!-- Update Stock Modal -->
+    <!-- Edit Product Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Component</h2>
+            <form id="editForm">
+                <input type="hidden" name="id">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select name="category_id" id="edit-cat-select" required></select>
+                </div>
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label>Brand</label>
+                        <input type="text" name="brand">
+                    </div>
+                    <div>
+                        <label>Model</label>
+                        <input type="text" name="model">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Product Image</label>
+                    <div id="edit-img-preview"
+                        style="width: 100%; height: 150px; background: var(--glass); border-radius: 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed var(--border);">
+                        <span style="color: var(--text-muted);">No image</span>
+                    </div>
+                    <input type="file" id="edit-prod-file-input" accept="image/*"
+                        onchange="previewImage(this, 'edit-img-preview')">
+                    <input type="hidden" name="image_url">
+                </div>
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label>Price</label>
+                        <input type="number" name="price" step="0.01">
+                    </div>
+                    <div>
+                        <label>Min Level</label>
+                        <input type="number" name="min_stock_level">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Update Product</button>
+                    <button type="button" class="btn" onclick="closeModal('editModal')"
+                        style="background: var(--glass);">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <div id="stockModal" class="modal">
         <div class="modal-content">
             <h2 id="stock-modal-title">Adjust Stock</h2>
@@ -260,7 +316,13 @@ if (!isset($_SESSION['user_id'])) {
         let allProducts = [];
         let allCategories = [];
         let currentFilter = 'all';
-        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        let cart = [];
+        try {
+            cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            if (!Array.isArray(cart)) cart = [];
+        } catch (e) {
+            cart = [];
+        }
 
         async function fetchAPI(action, options = {}) {
             try {
@@ -336,6 +398,7 @@ if (!isset($_SESSION['user_id'])) {
                         <td>${status}</td>
                         <td>
                             <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-icon" onclick="openEditModal(${p.id})" title="Edit">✏️</button>
                                 <button class="btn btn-icon" onclick="openStockModal(${p.id}, '${p.name.replace(/'/g, "\\'")}')" title="Adjust Stock">📦</button>
                                 <button class="btn btn-icon" onclick="deleteProduct(${p.id})" title="Delete" style="color: var(--danger)">🗑️</button>
                             </div>
@@ -354,41 +417,45 @@ if (!isset($_SESSION['user_id'])) {
                 return;
             }
 
-            grid.innerHTML = products.map(p => `
+            grid.innerHTML = products.map(p => {
+                const escapedName = p.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                return `
                 <div class="product-card">
                     <div class="product-image">
                         ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : '<div style="height:100%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); color:var(--text-muted);">No Image</div>'}
                         ${p.stock_quantity <= 0 ? '<div class="stock-badge out">Out of Stock</div>' :
-                    p.stock_quantity <= p.min_stock_level ? '<div class="stock-badge low">Low Stock</div>' : ''}
+                        p.stock_quantity <= p.min_stock_level ? '<div class="stock-badge low">Low Stock</div>' : ''}
                     </div>
                     <div class="product-info">
                         <div class="product-category">${p.category_name}</div>
                         <h3 class="product-title">${p.name}</h3>
                         <div class="product-meta">${p.brand} | ${p.model}</div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: auto;">
                             <div class="product-price">$${parseFloat(p.price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                            <button class="btn btn-primary btn-icon" onclick="addToCart(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.price})" ${p.stock_quantity <= 0 ? 'disabled' : ''} style="width: 40px; height: 40px; padding: 0; border-radius: 12px;">
-                                🛒
+                            <button class="btn btn-primary" onclick="addToCart(event, ${p.id}, '${escapedName}', ${p.price})" ${p.stock_quantity <= 0 ? 'disabled' : ''} style="width: 100%; height: 50px; font-size: 0.9rem;">
+                                🛒 Add to Cart
                             </button>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function renderCategories(categories) {
-            const select = document.getElementById('cat-select');
-            if (select) {
-                select.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            }
+            const selects = [document.getElementById('cat-select'), document.getElementById('edit-cat-select')];
+            selects.forEach(select => {
+                if (select) {
+                    select.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                }
+            });
 
             const scroll = document.getElementById('category-filters');
             if (scroll) {
                 const activeClass = currentFilter === 'all' ? 'active' : '';
-                scroll.innerHTML = `<button class="filter-tab ${activeClass}" onclick="setFilter('all')">All Components</button>` +
+                scroll.innerHTML = `<button class="filter-tab ${activeClass}" onclick="setFilter(event, 'all')">All Components</button>` +
                     categories.map(c => {
                         const active = currentFilter == c.id ? 'active' : '';
-                        return `<button class="filter-tab ${active}" onclick="setFilter(${c.id})">${c.name}</button>`;
+                        return `<button class="filter-tab ${active}" onclick="setFilter(event, ${c.id})">${c.name}</button>`;
                     }).join('');
             }
         }
@@ -436,29 +503,40 @@ if (!isset($_SESSION['user_id'])) {
             renderProducts(filtered);
         }
 
-        function setFilter(cid) {
+        function setFilter(el, cid) {
             currentFilter = cid;
             const tabs = document.querySelectorAll('.filter-tab');
             tabs.forEach(t => t.classList.remove('active'));
 
-            // Find the clicked tab
-            event.target.classList.add('active');
+            if (el && el.target) el.target.classList.add('active');
+            else if (el) el.classList.add('active');
 
             filterProducts();
         }
 
-        function addToCart(id, name, price) {
-            const existing = cart.find(i => i.id === id);
+        function addToCart(event, id, name, price) {
+            console.log('Adding to cart:', id, name, price);
+            price = parseFloat(price) || 0;
+            const existing = cart.find(i => String(i.id) === String(id));
             if (existing) {
                 existing.qty++;
             } else {
                 cart.push({ id, name, price, qty: 1 });
             }
-            updateCartUI();
-            localStorage.setItem('cart', JSON.stringify(cart));
-
-            // Subtle toast or animation?
+            saveAndSyncCart();
             showToast(`Added ${name} to cart`);
+
+            // Animation for cart count
+            const countEl = document.getElementById('cart-count');
+            if (countEl) {
+                countEl.style.transition = 'all 0.3s ease';
+                countEl.style.transform = 'scale(1.5)';
+                countEl.style.background = 'var(--secondary)';
+                setTimeout(() => {
+                    countEl.style.transform = 'scale(1)';
+                    countEl.style.background = 'var(--primary)';
+                }, 300);
+            }
         }
 
         function updateCartUI() {
@@ -469,40 +547,67 @@ if (!isset($_SESSION['user_id'])) {
             if (!cartItems) return;
 
             if (cart.length === 0) {
-                cartItems.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);">Your cart is empty</div>';
+                cartItems.innerHTML = `
+                    <div style="text-align:center; padding:4rem 2rem; color:var(--text-muted);">
+                        <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;">🛒</div>
+                        <p>Your build is currently empty</p>
+                    </div>`;
                 document.getElementById('cart-total').textContent = '$0.00';
                 return;
             }
 
             let total = 0;
             cartItems.innerHTML = cart.map((item, index) => {
-                const itemTotal = item.price * item.qty;
+                const price = parseFloat(item.price) || 0;
+                const itemTotal = price * item.qty;
                 total += itemTotal;
                 return `
                 <div class="cart-item">
                     <div style="flex: 1;">
-                        <div style="font-weight: 700; color: white; margin-bottom: 0.25rem;">${item.name}</div>
-                        <div style="font-size: 0.85rem; color: var(--text-muted);">$${item.price.toFixed(2)} × ${item.qty}</div>
+                        <div style="font-weight: 700; color: white; margin-bottom: 0.5rem; font-size: 1rem;">${item.name}</div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--secondary);">
+                            <span style="font-weight: 800;">$${price.toFixed(2)}</span>
+                            <span style="color: var(--text-muted); font-size: 0.75rem;">each</span>
+                        </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="font-weight: 800; color: var(--secondary);">$${itemTotal.toFixed(2)}</div>
-                        <button class="btn btn-icon" onclick="removeFromCart(${index})" style="color: var(--danger); background: rgba(239, 68, 68, 0.1); width: 32px; height: 32px; border-radius: 8px;">×</button>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem;">
+                        <div style="font-weight: 900; color: white; font-size: 1.1rem;">$${itemTotal.toFixed(2)}</div>
+                        <div style="display: flex; align-items: center; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 2px;">
+                            <button onclick="decrementCart(${index})" style="background:transparent; border:none; color:white; width:24px; cursor:pointer;">-</button>
+                            <span style="padding: 0 8px; font-weight: 700; font-size: 0.9rem; min-width: 30px; text-align:center;">${item.qty}</span>
+                            <button onclick="incrementCart(${index})" style="background:transparent; border:none; color:white; width:24px; cursor:pointer;">+</button>
+                            <button onclick="removeFromCart(${index})" style="margin-left:8px; background:rgba(239, 68, 68, 0.1); border:none; color:var(--danger); width:24px; height:24px; border-radius:4px; cursor:pointer; font-size: 12px;">✕</button>
+                        </div>
                     </div>
                 </div>
                 `;
             }).join('');
 
-            document.getElementById('cart-total').textContent = '$' + total.toFixed(2);
+            document.getElementById('cart-total').textContent = '$' + total.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        }
+
+        function incrementCart(index) {
+            cart[index].qty++;
+            saveAndSyncCart();
+        }
+
+        function decrementCart(index) {
+            if (cart[index].qty > 1) {
+                cart[index].qty--;
+                saveAndSyncCart();
+            } else {
+                removeFromCart(index);
+            }
         }
 
         function removeFromCart(index) {
-            if (cart[index].qty > 1) {
-                cart[index].qty--;
-            } else {
-                cart.splice(index, 1);
-            }
-            updateCartUI();
+            cart.splice(index, 1);
+            saveAndSyncCart();
+        }
+
+        function saveAndSyncCart() {
             localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartUI();
         }
 
         function toggleCart() {
@@ -513,10 +618,10 @@ if (!isset($_SESSION['user_id'])) {
             }
         }
 
-        async function checkout() {
+        async function checkout(event) {
             if (cart.length === 0) return;
 
-            const btn = event.target;
+            const btn = event ? event.target : document.querySelector('button[onclick="checkout()"]');
             const originalText = btn.innerText;
             btn.innerText = "Processing...";
             btn.disabled = true;
@@ -571,6 +676,40 @@ if (!isset($_SESSION['user_id'])) {
             }, 3000);
         }
 
+        function previewImage(input, previewId) {
+            const preview = document.getElementById(previewId);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        window.openEditModal = (id) => {
+            const p = allProducts.find(x => x.id == id);
+            if (!p) return;
+            const f = document.getElementById('editForm');
+            f.id.value = p.id;
+            f.name.value = p.name;
+            f.category_id.value = p.category_id;
+            f.brand.value = p.brand;
+            f.model.value = p.model;
+            f.price.value = p.price;
+            f.min_stock_level.value = p.min_stock_level;
+            f.image_url.value = p.image_url;
+
+            const preview = document.getElementById('edit-img-preview');
+            if (p.image_url) {
+                preview.innerHTML = `<img src="${p.image_url}" style="width:100%; height:100%; object-fit:cover;">`;
+            } else {
+                preview.innerHTML = `<span style="color: var(--text-muted);">No image</span>`;
+            }
+
+            openModal('editModal');
+        };
+
         window.openModal = (id) => document.getElementById(id).style.display = 'flex';
         window.closeModal = (id) => document.getElementById(id).style.display = 'none';
 
@@ -617,6 +756,44 @@ if (!isset($_SESSION['user_id'])) {
             if (res && res.success) {
                 closeModal('addModal');
                 e.target.reset();
+                document.getElementById('add-img-preview').innerHTML = '<span style="color: var(--text-muted);">No image selected</span>';
+                loadData();
+            }
+
+            btn.innerText = originalText;
+            btn.disabled = false;
+        };
+
+        document.getElementById('editForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.innerText = "Updating...";
+            btn.disabled = true;
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            // Handle Image Upload
+            const fileInput = document.getElementById('edit-prod-file-input');
+            if (fileInput.files.length > 0) {
+                const uploadData = new FormData();
+                uploadData.append('file', fileInput.files[0]);
+                try {
+                    const res = await fetch('api.php?action=upload_image', { method: 'POST', body: uploadData });
+                    const result = await res.json();
+                    if (result.success) data.image_url = result.url;
+                } catch (err) { console.error('Upload failed', err); }
+            }
+
+            const res = await fetchAPI('edit_product', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res && res.success) {
+                closeModal('editModal');
                 loadData();
             }
 

@@ -249,8 +249,9 @@ try {
                 try {
                     // Create Order
                     $total = 0;
-                    foreach ($cart as $item)
-                        $total += $item['price'];
+                    foreach ($cart as $item) {
+                        $total += floatval($item['price']) * intval($item['qty']);
+                    }
 
                     $stmt = $pdo->prepare("INSERT INTO orders (user_id, total_price) VALUES (?, ?)");
                     $stmt->execute([$_SESSION['user_id'], $total]);
@@ -258,21 +259,31 @@ try {
 
                     // Process Items
                     foreach ($cart as $item) {
+                        $pid = $item['id'];
+                        $qty = intval($item['qty']);
+                        $price = floatval($item['price']);
+
                         // Deduct Stock
-                        $stmt = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity - 1 WHERE id = ? AND stock_quantity > 0");
-                        $stmt->execute([$item['id']]);
+                        $stmt = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?");
+                        $stmt->execute([$qty, $pid, $qty]);
 
                         if ($stmt->rowCount() == 0) {
-                            throw new Exception("Product {$item['name']} is out of stock");
+                            // Check if product even exists and has enough stock
+                            $check = $pdo->prepare("SELECT name, stock_quantity FROM products WHERE id = ?");
+                            $check->execute([$pid]);
+                            $pInfo = $check->fetch();
+                            $pName = $pInfo ? $pInfo['name'] : "Unknown product";
+                            $pStock = $pInfo ? $pInfo['stock_quantity'] : 0;
+                            throw new Exception("Product '{$pName}' does not have enough stock (Requested: {$qty}, Available: {$pStock})");
                         }
 
                         // Add Order Item
-                        $stmt = $pdo->prepare("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, 1, ?)");
-                        $stmt->execute([$orderId, $item['id'], $item['price']]);
+                        $stmt = $pdo->prepare("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
+                        $stmt->execute([$orderId, $pid, $qty, $price]);
 
                         // Log Stock Movement
-                        $stmt = $pdo->prepare("INSERT INTO stock_logs (product_id, type, quantity, notes) VALUES (?, 'OUT', 1, 'Customer Order #$orderId')");
-                        $stmt->execute([$item['id']]);
+                        $stmt = $pdo->prepare("INSERT INTO stock_logs (product_id, type, quantity, notes) VALUES (?, 'OUT', ?, ?)");
+                        $stmt->execute([$pid, $qty, "Customer Order #$orderId"]);
                     }
 
                     $pdo->commit();
